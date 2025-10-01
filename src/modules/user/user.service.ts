@@ -21,7 +21,7 @@ const getAllFromDB = async () => {
             updatedAt: true,
             role: true,
             status: true,
-            posts: true
+            blogs: true
         },
         orderBy: {
             createdAt: "desc"
@@ -45,7 +45,7 @@ const getUserById = async (id: number) => {
             createdAt: true,
             updatedAt: true,
             status: true,
-            posts: true
+            blogs: true
         }
     })
     return result;
