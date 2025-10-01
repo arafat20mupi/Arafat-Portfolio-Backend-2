@@ -1,39 +1,68 @@
-// middleware/uploadToCloudinary.ts
 import { Request, Response, NextFunction } from "express";
 import multer from "multer";
 import { v2 as cloudinary } from "cloudinary";
 import streamifier from "streamifier";
 
-// Multer setup (to read file from request)
 const storage = multer.memoryStorage();
 export const upload = multer({ storage });
 
-// Cloudinary config
 cloudinary.config({
   cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
   api_key: process.env.CLOUDINARY_API_KEY,
   api_secret: process.env.CLOUDINARY_API_SECRET,
 });
 
-export const uploadToCloudinary = (
-  req: Request,
-  res: Response,
-  next: NextFunction
-) => {
-  if (!req.file) {
-    return res.status(400).json({ error: "No file uploaded" });
-  }
+// ---------------------
+// Single File Upload
+// ---------------------
+export const uploadSingleImage = (fieldName: string) => async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const file = (req as any).file || (req.files && (req.files as any)[fieldName]?.[0]);
+    if (!file) return next();
 
-  const stream = cloudinary.uploader.upload_stream(
-    (error, result) => {
-      if (error) {
-        return res.status(500).json({ error: error.message });
-      }
-      // save url for next route
-      (req as any).cloudinaryUrl = result?.secure_url;
+    const stream = cloudinary.uploader.upload_stream((err, result) => {
+      if (err) return res.status(500).json({ error: err.message });
+      (req as any).cloudinaryUrl = result!.secure_url;
       next();
-    }
-  );
+    });
 
-  streamifier.createReadStream(req.file.buffer).pipe(stream);
+    streamifier.createReadStream(file.buffer).pipe(stream);
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Single image upload failed" });
+  }
+};
+
+// ---------------------
+// Multiple Files Upload
+// ---------------------
+export const uploadMultipleImages = (fieldName: string) => async (req: Request, res: Response, next: NextFunction) => {
+  try {
+    const files = (req.files as any)?.[fieldName];
+    if (!files || files.length === 0) return next();
+
+    const uploadedUrls: string[] = [];
+
+    await Promise.all(
+      files.map(
+        (file: Express.Multer.File) =>
+          new Promise<void>((resolve, reject) => {
+            const stream = cloudinary.uploader.upload_stream((err, result) => {
+              if (err) reject(err);
+              else {
+                uploadedUrls.push(result!.secure_url);
+                resolve();
+              }
+            });
+            streamifier.createReadStream(file.buffer).pipe(stream);
+          })
+      )
+    );
+
+    (req as any).cloudinaryUrls = uploadedUrls;
+    next();
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "Multiple images upload failed" });
+  }
 };

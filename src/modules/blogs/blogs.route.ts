@@ -1,13 +1,13 @@
 // routes/blog.routes.ts
 import { Router } from "express";
 import { blogController } from "./blogs.controlller";
-import { upload, uploadToCloudinary } from "../../middleware/uploadToCloudinary";
+import { upload, uploadSingleImage,   } from "../../middleware/uploadToCloudinary";
 
 const router = Router();
 
 router.post("/",
     upload.single("image"),
-    uploadToCloudinary,
+    uploadSingleImage("image"),
     blogController.createBlog
 );
 router.get("/", blogController.getAllBlogs);
