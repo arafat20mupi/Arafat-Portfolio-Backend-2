@@ -45,6 +45,7 @@ export const projectController = {
                 testimonialQuote,
             } = req.body;
 
+
             const projectData = {
                 title,
                 description,

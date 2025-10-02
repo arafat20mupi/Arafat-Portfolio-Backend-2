@@ -22,7 +22,11 @@ export const uploadSingleImage = (fieldName: string) => async (req: Request, res
 
     const stream = cloudinary.uploader.upload_stream((err, result) => {
       if (err) return res.status(500).json({ error: err.message });
-      (req as any).cloudinaryUrl = result!.secure_url;
+
+      // প্রতিটি ফিল্ডের জন্য আলাদা property
+      (req as any)[`${fieldName}Url`] = result!.secure_url;
+
+      console.log(`${fieldName} uploaded:`, result!.secure_url);
       next();
     });
 
@@ -59,7 +63,10 @@ export const uploadMultipleImages = (fieldName: string) => async (req: Request, 
       )
     );
 
-    (req as any).cloudinaryUrls = uploadedUrls;
+    // এখানে ফিল্ড অনুযায়ী dynamic key
+    (req as any)[`${fieldName}Urls`] = uploadedUrls;
+
+    console.log(`${fieldName} uploaded:`, uploadedUrls);
     next();
   } catch (err) {
     console.error(err);
