@@ -57,4 +57,12 @@ export const blogService = {
       where: { id },
     });
   },
+
+  // insert all blogs
+  async insertMany(blogs: any[]) {
+    return prisma.blog.createMany({
+      data: blogs,
+      skipDuplicates: true,
+    });
+  }
 };

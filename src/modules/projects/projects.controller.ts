@@ -102,4 +102,15 @@ export const projectController = {
             res.status(500).json({ message: "Failed to delete project" });
         }
     },
+
+    insertAllProjects: async (req: Request, res: Response) => {
+        try {
+            const projects = req.body;
+            const result = await projectService.insertMany(projects);
+            res.status(201).json({ success: true, result });
+        } catch (error) {
+            console.error(error);
+            res.status(500).json({ success: false, message: "Failed to insert projects" });
+        }
+    },
 };

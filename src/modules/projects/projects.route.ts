@@ -18,6 +18,8 @@ router.post(
   uploadSingleImage("testimonialImage"),
   projectController.createProject
 );
+
+router.post("/bulk", projectController.insertAllProjects);
 router.put("/:id", projectController.updateProject);
 router.delete("/:id", projectController.deleteProject);
 

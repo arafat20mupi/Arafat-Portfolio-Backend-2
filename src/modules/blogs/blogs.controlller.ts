@@ -24,7 +24,7 @@ export const blogController = {
       const tags = req.body.tags ? req.body.tags.split(',').map((t: string) => t.trim()) : [];
       const keywords = req.body.keywords ? req.body.keywords.split(',').map((k: string) => k.trim()) : [];
 
-      const image = req.cloudinaryUrl || req.body.image || null;
+      const image = (req as any).imageUrl || null
 
       const payload = {
         ...req.body,
@@ -72,8 +72,30 @@ export const blogController = {
   async updateBlog(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id);
-      const blog = await blogService.updateBlog(id, req.body);
-      res.json(blog);
+
+      // Only allow fields that exist in Blog model
+      const allowedFields = [
+        "title",
+        "excerpt",
+        "content",
+        "image",
+        "category",
+        "readTime",
+        "tags",
+        "featured",
+        "published",
+        "seoTitle",
+        "seoDescription",
+        "seoKeywords",
+      ];
+
+      const data: any = {};
+      allowedFields.forEach((key) => {
+        if (req.body[key] !== undefined) data[key] = req.body[key];
+      });
+
+      const updatedBlog = await blogService.updateBlog(id, data);
+      res.json(updatedBlog);
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
@@ -83,10 +105,28 @@ export const blogController = {
   async deleteBlog(req: Request, res: Response) {
     try {
       const id = parseInt(req.params.id);
+
+      console.log(id);
       await blogService.deleteBlog(id);
+
       res.json({ message: "Blog deleted successfully" });
     } catch (error: any) {
       res.status(500).json({ message: error.message });
     }
   },
+
+  // insert all blogs
+  async insertAllBlogs(req: Request, res: Response) {
+    try {
+      const blogs = req.body; // Expecting an array of blog objects
+      if (!Array.isArray(blogs)) {
+        return res.status(400).json({ message: "Invalid data format. Expected an array of blogs." });
+      }
+
+      const insertedBlogs = await blogService.insertMany(blogs);
+      res.status(201).json(insertedBlogs);
+    } catch (error: any) {
+      res.status(500).json({ message: error.message });
+    }
+  }
 };

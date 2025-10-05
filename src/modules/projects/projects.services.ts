@@ -41,7 +41,7 @@ export const projectService = {
         return project;
     },
 
-  updateProject: async (id: number, data: any) => {
+    updateProject: async (id: number, data: any) => {
         return await prisma.project.update({
             where: { id },
             data: data,
@@ -52,5 +52,46 @@ export const projectService = {
         return await prisma.project.delete({
             where: { id },
         });
+    },
+
+    insertMany: async (projects: any[]) => {
+        const createdProjects = [];
+
+        for (const project of projects) {
+            const { challenges, testimonial, ...projectData } = project;
+
+            const created = await prisma.project.create({
+                data: {
+                    ...projectData,
+                    challenges: challenges
+                        ? {
+                            create: challenges.map((c: any) => ({
+                                title: c.title,
+                                description: c.description,
+                            })),
+                        }
+                        : undefined,
+                    testimonial: testimonial
+                        ? {
+                            create: {
+                                name: testimonial.name || "Anonymous",
+                                role: testimonial.role || "Client",
+                                company: testimonial.company || "N/A",
+                                quote: testimonial.quote || testimonial.text,
+                                image: testimonial.image || null,
+                            },
+                        }
+                        : undefined,
+                },
+                include: {
+                    challenges: true,
+                    testimonial: true,
+                },
+            });
+
+            createdProjects.push(created);
+        }
+
+        return createdProjects;
     },
 };
